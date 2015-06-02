@@ -378,7 +378,8 @@ func (d *Decimal) UnmarshalJSON(decimalBytes []byte) error {
 	decimal, err := NewFromString(str)
 	*d = decimal
 	if err != nil {
-		return fmt.Errorf("Error decoding string '%s': %s", str, err)
+		*d = Zero
+		fmt.Printf("Error decoding string '%s': %s \n", str, err)
 	}
 	return nil
 }
