@@ -78,12 +78,26 @@ func New(value int64, exp int32) Decimal {
 func NewFromString(value string) (Decimal, error) {
 	var intString string
 	var exp int32
-	parts := strings.Split(value, ".")
+	// handle scientific notation, such as 1.234E7
+	leftValue := value
+	eparts := strings.Split(leftValue, "E")
+	if len(eparts) == 2 {
+		// We only handle the case that E part is contained
+		leftValue = eparts[0]
+		expInt, err := strconv.Atoi(eparts[1])
+		if err != nil {
+			return Decimal{}, fmt.Errorf("can't convert %s to decimal: exp format is wrong", value)
+		}
+		exp = int32(expInt)
+	} else if len(eparts) != 1 {
+		return Decimal{}, fmt.Errorf("can't convert %s to decimal: too many E", value)
+	}
+
+	parts := strings.Split(leftValue, ".")
 	if len(parts) == 1 {
 		// There is no decimal point, we can just parse the original string as
 		// an int
-		intString = value
-		exp = 0
+		intString = leftValue
 	} else if len(parts) == 2 {
 		intString = parts[0] + parts[1]
 		expInt := -len(parts[1])
@@ -91,7 +105,7 @@ func NewFromString(value string) (Decimal, error) {
 			// NOTE(vadim): I doubt a string could realistically be this long
 			return Decimal{}, fmt.Errorf("can't convert %s to decimal: fractional part too long", value)
 		}
-		exp = int32(expInt)
+		exp += int32(expInt)
 	} else {
 		return Decimal{}, fmt.Errorf("can't convert %s to decimal: too many .s", value)
 	}
